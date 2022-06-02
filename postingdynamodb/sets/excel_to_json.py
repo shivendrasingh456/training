@@ -26,50 +26,30 @@ class ExcelToJson():
                     for item in ret:
                         if fn_name == item['display_name']:
                             raise Exception(f"Duplicate product {fn_name} found")
-                    ret.append({
-                        "display_name": row[0].value,
-                        "description": row[1].value,
-                        "addl_description": row[2].value,
-                        "req_doc": row[3].value,
-                        "deliverables": row[4].value,
-                        "eta": row[5].value,
-                        "category": row[6].value,
-                        "sale_val": row[7].value,
-                        "tax_methods": row[8].value,
-                        "tax_inclusicve": row[9].value,
-                        "uom": row[10].value,
-                        "image_url": row[11].value,
-                        "variants":[{
-                        "variant_display_name": row[12].value,
-                        "variant_description": row[13].value,
-                        "variant_required_docs": row[14].value,
-                        "variant_deliverables": row[15].value,
-                        "variant_eta": row[16].value,
-                        "variant_sale_val": row[17].value
-                        },
-                        {
-                        "variant_display_name": row[18].value,
-                        "variant_description": row[19].value,
-                        "variant_required_docs": row[20].value,
-                        "variant_deliverables": row[21].value,
-                        "variant_eta": row[22].value,
-                        "variant_sale_val": row[23].value
-                        },
-                        {
-                        "variant_display_name": row[24].value,
-                        "variant_description": row[25].value,
-                        "variant_required_docs": row[26].value,
-                        "variant_deliverables": row[27].value,
-                        "variant_eta": row[28].value,
-                        "variant_sale_val": row[29].value
-                        }]
-                    })
+                    keys=("display_name","description","addl_description","req_doc","deliverables","eta","category","sale_val","tax_methods","tax_inclusicve","uom","image_url","variant_display_name","variant_description","variant_required_docs","variant_deliverables","variant_eta","variant_sale_val","variant_display_name","variant_description","variant_required_docs","variant_deliverables","variant_eta","variant_sale_val","variant_display_name","variant_description","variant_required_docs","variant_deliverables","variant_eta","variant_sale_val")
+                    prod={}
+                    prod['variants']=[{},{},{}]
+                    for i in range(len(headers)):
+                        if i<12:
+                            prod[keys[i]]=row[i].value
+                        elif i>=24:
+                            prod['variants'][2][keys[i]]=row[i].value
+                        elif i>=18:
+                            prod['variants'][1][keys[i]]=row[i].value
+                        elif i>=12:
+                            prod['variants'][0][keys[i]]=row[i].value
+                    ret.append(prod)
         except KeyError:
             pass
         except Exception as e:
             print('Error is :', e)
         # self.data['products'] = ret
         self.data = ret
+
+if __name__=='__main__':
+
+    o = ExcelToJson("MBG_products.xlsx")
+    json = o.getJson()
 
 
 

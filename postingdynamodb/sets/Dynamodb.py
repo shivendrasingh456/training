@@ -52,7 +52,7 @@ class Dynamodb:
 
 
 
-    def putitem(self,tablename,list_dict):
+    def putitem(self,list_dict):
         """takes table name,list of dictionary,add details to dynamodb table,returns success code
         py:function::
 
@@ -63,16 +63,14 @@ class Dynamodb:
             items['ResponseMetadata']['HTTPStatusCode'](status code): returns status code
         """
 
-
-        # service_table()
+        #storing data in service table
+        tablename ='service_table'
         if list_dict is None or len(list_dict) ==0 or type(list_dict) !=list:
             raise Exception("list is None or empty or any other datatype")
-
         for row in list_dict:
             details = row
             details['id'] = GetId(details)
             details['name'] = details['id']
-            
             if details.get('id') is None:
                 raise Exception("partition key is None")
             if len(details.get('id'))==0:
@@ -81,6 +79,7 @@ class Dynamodb:
                 raise Exception(f"deliverable,description,display name and similar data is not available")
             else:
                 self.variant = []
+                self.Item = {}
                 for variant in details['variants']:
                     variant_dict={}
                     dict ={}
@@ -109,10 +108,25 @@ class Dynamodb:
                     Item=self.Item
                 )
 
-        return items['ResponseMetadata']['HTTPStatusCode']
+                #storing data in categories table 
+                dict_details ={'id' : details['id'],'display_name' : details['display_name']}
+                self.Categories(dict_details)
 
 
-    # def service_table (tablename,list_dict):
-    #     pass
+
+    def Categories(self,dict_details):
+        tablename = 'Categories'
+        self.Item ={}
+        dict_details['name'] = dict_details['id']
+        for key in dict_details:
+                    self.Item[key] = {
+                        "BOOL"if type(dict_details[key])==bool else "S" if type(dict_details[key])==str else "NULL" if dict_details[key]is None else "N": dict_details[key] if type(dict_details[key]) ==bool else str(dict_details[key]) if dict_details.get(key) is not None else True
+                    } 
+
+
+        items = self.client.put_item(
+                    TableName=tablename,
+                    Item=self.Item
+                )
     def getTables(self):
         return self.client.list_tables()["TableNames"]
