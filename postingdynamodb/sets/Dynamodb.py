@@ -1,5 +1,4 @@
 import boto3
-import sys
 from .getid import GetId
 
 class Dynamodb:
@@ -8,22 +7,23 @@ class Dynamodb:
         self.Item = {}
         self.attribute = []
         self.keyschema = []
+        self.variant = []
 
     def create(self, tablename, pkey):
-        """takes table name,partition key and sort key,returns status code
+        """takes table name,partition key,creats table in dynamodb and returns None
         py:function::
-
+                    
         Args:
-            tablename(str),pkey(str),skey(str): credentials to be used to create table
+            tablename(str),pkey(str): credentials to be used to create table
 
         Returns:
-            self.table['TableDescription']['ResponseMetadata']['HTTPStatusCode'](satus code) : returns status code
+            None
 
         """
         tables =self.getTables()
         try:
             if tablename in tables:
-                raise Exception("TableName Already Exists")
+                raise Exception(f"Table name as : {tablename} exists already")
 
             attributes ={pkey:'HASH'}
             for att in attributes:
@@ -47,7 +47,6 @@ class Dynamodb:
                     'WriteCapacityUnits': 123
                 }
             )
-            return self.table['TableDescription']['ResponseMetadata']['HTTPStatusCode']
         except Exception as e:
             print(str(e))
 
@@ -63,41 +62,57 @@ class Dynamodb:
         Returns:
             items['ResponseMetadata']['HTTPStatusCode'](status code): returns status code
         """
+
+
+        # service_table()
         if list_dict is None or len(list_dict) ==0 or type(list_dict) !=list:
             raise Exception("list is None or empty or any other datatype")
 
         for row in list_dict:
-            row['id'] = GetId(row)
-            row['name'] = row['id']
-            # print(row['id'])
-            if None in (row.get('name'),row.get('id')):
-                raise Exception("partition key or sort key")
-            if len(row.get('name')) ==0 or len(row.get('id'))==0:
-                raise Exception("partition key or sort key cannot be empty string")
-            if row.get('variants') is None:
+            details = row
+            details['id'] = GetId(details)
+            details['name'] = details['id']
+            
+            if details.get('id') is None:
+                raise Exception("partition key is None")
+            if len(details.get('id'))==0:
+                raise Exception("partition key cannot be empty string")
+            if details.get('variants') is None:
                 raise Exception(f"deliverable,description,display name and similar data is not available")
             else:
-                num=1
-                for data in row['variants']:
-                    for variant_data in data:
-                        index = variant_data.find('_')
-                        self.Item[variant_data[0:index -1] + str(num)+variant_data[index :]] = {
-                            "S"if type(data[variant_data])== str else "N" if data.get(variant_data) is not None else "NULL":  str(data[variant_data]) if data.get(variant_data) is not None else data[variant_data]
+                self.variant = []
+                for variant in details['variants']:
+                    variant_dict={}
+                    dict ={}
+                    for key in variant:                
+                        dict[key] ={
+                            "BOOL" if type(variant[key])==bool else "S" if type(variant[key])==str else "NULL" if variant[key]is None else "N": variant[key] if type(variant[key]) ==bool else str(variant[key]) if variant.get(key) is not None else True
                         }
-                    num = num +1
-            row.pop('variants')
-            
-            for key in row:
-                self.Item[key] = {
-                    "BOOL"if type(row[key])==bool else "S" if type(row[key])==str else "N" if data.get(variant_data) is not None else "NULL":row[key] if type(row[key]) ==bool else str(row[key]) if data.get(variant_data) is not None else data[variant_data]
-                }            
 
-        items = self.client.put_item(
-            TableName=tablename,
-            Item=self.Item
-        )
+                    variant_dict['M'] = dict  
+                    self.variant.append(variant_dict)
+                                                                                                        
+                self.Item['variants'] = {
+                    "L": self.variant
+                }  
+                details.pop('variants')  
+
+                # otherthan variants    
+                for key in details:
+                    self.Item[key] = {
+                        "BOOL"if type(details[key])==bool else "S" if type(details[key])==str else "NULL" if details[key]is None else "N": details[key] if type(details[key]) ==bool else str(details[key]) if details.get(key) is not None else True
+                    }           
+
+
+                items = self.client.put_item(
+                    TableName=tablename,
+                    Item=self.Item
+                )
 
         return items['ResponseMetadata']['HTTPStatusCode']
 
+
+    # def service_table (tablename,list_dict):
+    #     pass
     def getTables(self):
         return self.client.list_tables()["TableNames"]
