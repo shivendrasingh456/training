@@ -9,12 +9,12 @@ class Dynamodb:
         self.keyschema = []
         self.variant = []
 
-    def create(self, tablename, pkey):
-        """takes table name,partition key,creats table in dynamodb and returns None
+    def create(self, tablename, pkey,skey=None):
+        """takes table name,partition key or skey if availabe,creats table in dynamodb and returns None
         py:function::
-                    
+    
         Args:
-            tablename(str),pkey(str): credentials to be used to create table
+            tablename(str),pkey(str),skey(str-if available): credentials to be used to create table
 
         Returns:
             None
@@ -53,7 +53,7 @@ class Dynamodb:
 
 
     def putitem(self,list_dict):
-        """takes table name,list of dictionary,add details to dynamodb table,returns success code
+        """takes list of dictionary,add details to dynamodb table,returns success code
         py:function::
 
         Args:
@@ -115,6 +115,15 @@ class Dynamodb:
 
 
     def Categories(self,dict_details):
+        """takes dictionary,adds data to the categories dynamodb table,returns None
+        py:function::
+
+        Args:
+            dict_details(dict): dictionary conatining id and name data from json
+
+        Returns:
+            None
+        """
         tablename = 'Categories'
         self.Item ={}
         dict_details['name'] = dict_details['id']
@@ -129,4 +138,14 @@ class Dynamodb:
                     Item=self.Item
                 )
     def getTables(self):
+        """takes none,returns all tables present in dynamodb at a particular region
+        py:function::
+
+        Args:
+            None
+
+        Returns:
+            self.client.list_tables()["TableNames"][list] : list containing tablenames
+        
+        """
         return self.client.list_tables()["TableNames"]
