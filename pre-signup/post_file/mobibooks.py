@@ -8,6 +8,7 @@ import urllib.error
 import sys
 from .booksexceptions import BooksException
 import time
+from .getid import GetId
 
 class Mobibooks:
 
@@ -152,6 +153,7 @@ class Mobibooks:
                     #     raise BooksException(code = o['error']['code'], message = o['error']['message'] )
                     
                     return o
+                    print(f"o : {o}")
             except BooksException:
                 raise
             except:
@@ -200,17 +202,23 @@ class Mobibooks:
                 raise Exception('ERROR {0}, Reason:{1}'.format(o['error']['code'], o['error']['message']))
             return o
 
-    def get(self,url,sl_id,module='api'):
+    def get(self,url,module='api',data=None):
         url = self.base_url + module + '/' + url
         
-        url = url + str(sl_id) +"/link/?gl_id=1172"
+        if type(data) == int:    #when sl_id is present for posting data on mobibooks
+            sl_id = data 
+            url = url + str(sl_id) +"/link/?gl_id=1172"
+        elif type(data) == dict :
+            payload = data       #when payload is present for getting sl_id from mobibooks
+            name = GetId(payload['display_name'])
+            url = url + "find_by_name/?name=" + name 
+        
         for npass in range (3):
             try:
                 req = Request(url,None,{'Content-Type': 'application/json'})
                 resp = urlopen(req)
                 contents = resp.read()
                 res = contents.decode('utf-8')
-                print(f"response : {res}")
                 if res is None or res == '':
                     return ''
                 else:

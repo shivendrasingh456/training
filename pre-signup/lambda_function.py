@@ -1,4 +1,4 @@
-from post_file import Signup
+from post_file import Signup,Post_Queue
 import os
 
 def lambda_handler(event, context):
@@ -15,8 +15,7 @@ def lambda_handler(event, context):
         event['response']['autoVerifyPhone'] = True
 
     try :
-        if event is None or len(event)==0 or type(event) != dict:
-            raise Exception("event is none or empty or not dict")
+        
         a = Signup(event)
         #making connection to mobibooks
         a.making_connection()
@@ -26,11 +25,12 @@ def lambda_handler(event, context):
         a.post_mobibooks()
         
         #posting data on dynamodb
-        return a.postdynamodbb()
+        a.postdynamodb()
+        return event
         
     except Exception as e1 :
         print(f"exception : {e1}")
-        a = Signup(event)
-        a.post_queue(e1)
+        Post_Queue(e1)
+        return e1
         
         
