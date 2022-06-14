@@ -7,8 +7,7 @@ from boto3.dynamodb.conditions import Attr
 
 class Signup:
     def __init__(self,event=None):
-        if event is None or len(event)==0 or type(event) != dict:
-            raise Exception("event is none or empty or not dict")
+        
         self.a = Mobibooks(os.environ.get('MOBI_HOST'),os.environ.get('MOBI_USER'),os.environ.get('MOBI_PASSWORD'),os.environ.get('MOBI_LOCATION'),
         os.environ.get('MOBI_CUSTOMER'))
         self.event = event
@@ -21,7 +20,8 @@ class Signup:
         self.payload = Payload_mobibooks(self.event)
         
         #testing whether the given phone number exists in mobibooks or not
-        output = self.a.get('subledger/','api',self.payload)
+        subledger_url = 'subledger/'
+        output = self.a.get(subledger_url,'api',self.payload)
         
         if output['id'] != 0:
             print(f"sl_id already exists with id : {output['id']}")
