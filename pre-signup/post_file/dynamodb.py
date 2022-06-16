@@ -1,11 +1,13 @@
 import boto3
+import os
 from .getid import GetId
 from boto3.dynamodb.conditions import Attr
 from boto3.dynamodb.types import TypeDeserializer
 
+
 class Dynamodb:
     def __init__(self):
-        self.client = boto3.client('dynamodb',region_name = 'us-east-1')
+        self.client = boto3.client('dynamodb',region_name = os.environ.get('REGION_NAME'))
         self.Item = {}
         self.attribute = []
         self.keyschema = []

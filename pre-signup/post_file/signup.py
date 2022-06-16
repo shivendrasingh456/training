@@ -24,7 +24,7 @@ class Signup:
         output = self.a.get(subledger_url,'api',self.payload)
         
         if output['id'] != 0:
-            print(f"sl_id already exists with id : {output['id']}")
+            print(f"Details with name: {self.payload['display_name']} already exists with sl_id : {output['id']} in Mobibooks")
             self.sl_id = output['id']
         else:
             output = self.a.post('subledger/',self.payload)
@@ -37,7 +37,7 @@ class Signup:
             #2nd call on mobibooks
             output = self.a.get('subledger/','api',self.sl_id)
             if output.get('id'):
-                print(f"details are generated with sl_id : {self.sl_id} and giving response id : {output['id']}")
+                print(f"details are posted on mobibboks with sl_id : {self.sl_id} and giving response id : {output['id']}")
             else:
                 raise Exception(output)
             
@@ -50,20 +50,21 @@ class Signup:
         
         if res['Count'] ==0:
             # inserting data in dynamodb table 
-            tablename = "Customer"
+            tablename = "CUSTOMERS"
             b = Dynamodb()
             res = b.putitem(tablename,self.data)
+            print("new details are posted on dynamodb")
             
         else:
             if res['Items'][0]['sl_id'] is None:
                 res['Items'][0]['sl_id'] = self.sl_id
             else:
-                print(f"details are aleardy present in dynamodb with name {self.data['name']} and sl_id : {self.sl_id}")
+                print(f"Details aleardy exists in dynamodb with name: {self.data['name']} and sl_id : {self.sl_id}")
     
         
     def scandynamodb(self,name):
-        dynamodb = boto3.resource('dynamodb',region_name= "us-east-1", endpoint_url='https://dynamodb.us-east-1.amazonaws.com/')
-        item_table = dynamodb.Table('Customer')
+        dynamodb = boto3.resource('dynamodb',region_name= os.environ.get('REGION_NAME'), endpoint_url='https://dynamodb.'+os.environ.get('REGION_NAME')+'.amazonaws.com/')
+        item_table = dynamodb.Table('CUSTOMERS')
         response = item_table.scan(
             FilterExpression=Attr('name').eq(name)
         )
