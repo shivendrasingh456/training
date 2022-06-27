@@ -1,0 +1,1 @@
+from .getdetails import GetDetails
