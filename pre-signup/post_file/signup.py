@@ -56,17 +56,28 @@ class Signup:
             print("new details are posted on dynamodb")
             
         else:
-            if res['Items'][0]['sl_id'] is None:
+            if res['Items'][0].get('sl_id') is None:
                 res['Items'][0]['sl_id'] = self.sl_id
             else:
                 print(f"Details aleardy exists in dynamodb with name: {self.data['name']} and sl_id : {self.sl_id}")
     
         
     def scandynamodb(self,name):
-        dynamodb = boto3.resource('dynamodb',region_name= os.environ.get('REGION_NAME'), endpoint_url='https://dynamodb.'+os.environ.get('REGION_NAME')+'.amazonaws.com/')
-        item_table = dynamodb.Table('CUSTOMERS')
-        response = item_table.scan(
+        dynamodb = boto3.resource('dynamodb',region_name= "us-east-1")
+        self.item_table = dynamodb.Table('Customer')
+        res = self.item_table.scan(
             FilterExpression=Attr('name').eq(name)
         )
-        return response
+        return self.scan_with_LastEvaluatedKey(res,name)
        
+    def scan_with_LastEvaluatedKey(self,res,name):
+        """takes response,checks whether LastEvaluatedKey exists or not,if exists performs scan operation in while loop until LastEvaluatedKey exits
+        or we get the details for a particular record, returns response 
+        """
+        while 'LastEvaluatedKey' in res:
+            if  res['Count']!=0:
+                return res
+            LastEvaluatedKey=res['LastEvaluatedKey']
+            res= self.item_table.scan( FilterExpression=Attr('name').eq(name),ExclusiveStartKey=LastEvaluatedKey)
+            
+        return res
