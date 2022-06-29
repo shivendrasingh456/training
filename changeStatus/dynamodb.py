@@ -8,6 +8,7 @@ from boto3.dynamodb.types import TypeDeserializer
 class Dynamodb:
     def __init__(self):
         self.client = boto3.client('dynamodb',region_name = os.environ.get('REGION_NAME'))
+        self.dynamodb=boto3.resource('dynamodb',region_name= os.environ.get('REGION_NAME'))
         self.Item = {}
         self.attribute = []
         self.keyschema = []
@@ -61,7 +62,7 @@ class Dynamodb:
             TableName=tablename,
             Item=self.Item
         )
-        return items['ResponseMetadata']['HTTPStatusCode']
+        return items
 
     def getTables(self):
         """takes none,returns all tables present in dynamodb at a particular region
@@ -74,15 +75,14 @@ class Dynamodb:
         """
         return self.client.list_tables()["TableNames"]
 
-    def scandynamodb(self,tablename,fieldname1,data1,fieldname2,data2):
-        dynamodb = boto3.resource('dynamodb',region_name= os.environ.get('REGION_NAME'))
-        self.item_table = dynamodb.Table(tablename)
-        res = self.item_table.scan(
-            FilterExpression=Attr(fieldname1).eq(data1) & Attr(fieldname2).eq(data2)
+    def scandynamodb(self,tablename,fieldname,data):
+        self.item_table = self.dynamodb.Table(tablename)
+        res=self.item_table.scan(
+            FilterExpression=Attr(fieldname).eq(data)
         )
-        return self.scan_with_LastEvaluatedKey(res,fieldname1,data1,fieldname2,data2)
+        return self.scan_with_LastEvaluatedKey(res,fieldname,data)
        
-    def scan_with_LastEvaluatedKey(self,res,fieldname1,data1,fieldname2,data2):
+    def scan_with_LastEvaluatedKey(self,res,fieldname,data):
         """takes response,checks whether LastEvaluatedKey exists or not,if exists performs scan operation in while loop until LastEvaluatedKey exits
         or we get the details for a particular record, returns response 
         """
@@ -90,17 +90,46 @@ class Dynamodb:
             if  res['Count']!=0:
                 return res
             LastEvaluatedKey=res['LastEvaluatedKey']
-            res= self.item_table.scan( FilterExpression=Attr(fieldname1).eq(data1) & Attr(fieldname2).eq(data2)
+            res= self.item_table.scan( FilterExpression=Attr(fieldname).eq(data) 
             ,ExclusiveStartKey=LastEvaluatedKey)
             
         return res
 
-    def getitems(self,tablename,column_name,data):
-        dynamodb=boto3.resource('dynamodb',region_name= os.environ.get('REGION_NAME'))
-        item_table = dynamodb.Table(tablename)
-        res=item_table.get_item(
-        Key = {
-            column_name:data
-
-        }) 
+    def getitems(self,tablename,key):
+        """takes table name,primary key details and search items for those records only
+        py:function
+        
+        Args:
+            tablename(str):table to be scanned,key(dict): primary key constraints in the table
+            
+        Returns:
+            res(dict)
+        """
+        self.item_table = self.dynamodb.Table(tablename)
+        res=self.item_table.get_item(
+        Key=key
+        ) 
+        return res
+        
+    def updateitem(self,tablename,primary_key_values,updatedata):
+        """takes tablenanme,primary_key_values and updatedata and update values in the corrosponding primary key details
+        py:function::
+        
+        Args:
+            tablename(str),primary_key_values(dict):primsry key constraints in the table,updatedata(dict): data to be updated
+        
+        Returns:
+            res(dict)
+        """
+        table = self.dynamodb.Table(tablename)
+        updateExpression,expressionattributevalues='',{}
+        for key in updatedata:
+            updateExpression=updateExpression+','+key+' = :'+key+ ' '
+            expressionattributevalues[':'+key]=updatedata[key]
+      
+        res=table.update_item(
+        Key=primary_key_values
+        ,UpdateExpression='SET '+ updateExpression[1:],
+        ExpressionAttributeValues=expressionattributevalues
+        )
         return res
