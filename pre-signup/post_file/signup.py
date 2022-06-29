@@ -63,7 +63,7 @@ class Signup:
     
         
     def scandynamodb(self,name):
-        dynamodb = boto3.resource('dynamodb',region_name= "us-east-1")
+        dynamodb = boto3.resource('dynamodb',region_name= os.environ.get('REGION_NAME'))
         self.item_table = dynamodb.Table('Customer')
         res = self.item_table.scan(
             FilterExpression=Attr('name').eq(name)
