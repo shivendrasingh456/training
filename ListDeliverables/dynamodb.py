@@ -147,11 +147,11 @@ class Dynamodb:
             serializer_dict={}
             serializer_dict[key]=dict[key]
             
-            self.keyconditionexpression=self.keyconditionexpression +' AND '+key+' = :'+dict[key]
+            self.keyconditionexpression=self.keyconditionexpression +' AND '+key+' = :'+str(dict[key]) if type(dict[key])==int else dict[key] #when key is integer we use str(key)
             serializer = boto3.dynamodb.types.TypeSerializer()
             Item = {k: serializer.serialize(v) for k,v in serializer_dict.items()}
             for key1 in Item:
-                self.expressionattributevalues[':'+dict[key]]=Item[key1]
+                self.expressionattributevalues[':'+str(dict[key]) if type(dict[key])==int else dict[key]]=Item[key1]
             
         res=self.client.query(
         TableName=tablename,
