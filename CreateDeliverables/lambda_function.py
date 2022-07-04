@@ -9,8 +9,13 @@ def lambda_handler(event, context):
         data=event['arguments']['input']
         data['date']=datetime.datetime.now(timezone.utc).strftime('%Y-%m-%d %H:%M:%S')
         
-        #putting data in 'Deliverables table using application no(partition key) and date(sort key)'
-        tablename='Deliverables'
+        #putting data in repective table using application no(partition key) and date(sort key) and extracting tablename from event '
+        if  event['info']['fieldName']=='createDeliverable':
+            tablename='Deliverables'
+        elif event['info']['fieldName']=='createRaiseConcern':
+            tablename='RaiseConcern'
+        else:
+            tablename='ChatBox'
         a=Dynamodb()
         res=a.putitem(tablename,data)
         
